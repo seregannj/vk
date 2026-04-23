@@ -5,78 +5,52 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VK Video Player</title>
     <style>
-        body { font-family: system-ui, -apple-system, sans-serif; margin: 20px; background: #f5f5f5; color: #222; }
+        body { font-family: system-ui, sans-serif; margin: 20px; background: #f5f5f5; color: #222; }
         .wrap { max-width: 720px; margin: 0 auto; background: #fff; padding: 16px; border: 1px solid #ccc; }
         input { width: 60%; padding: 6px; box-sizing: border-box; }
         button { padding: 6px 12px; cursor: pointer; }
-        .controls { margin: 10px 0; display: flex; gap: 15px; align-items: center; }
-        select { padding: 4px; }
-        iframe { width: 100%; aspect-ratio: 16/9; border: none; background: #000; display: block; }
-        .hint { font-size: 12px; color: #555; margin-top: 10px; line-height: 1.4; }
+        iframe { width: 100%; aspect-ratio: 16/9; border: none; background: #000; display: block; margin-top: 10px; }
+        .hint { font-size: 13px; color: #444; margin-top: 12px; line-height: 1.5; background: #eef; padding: 10px; border-radius: 4px; }
     </style>
 </head>
 <body>
     <div class="wrap">
-        <h3>VK Video</h3>
+        <h3>VK Video Player</h3>
         <input type="text" id="url" placeholder="https://vk.com/video-123456_789012">
         <button onclick="loadVideo()">Загрузить</button>
         
-        <div class="controls">
-            <label>Качество:
-                <select id="quality">
-                    <option value="0">Авто</option>
-                    <option value="1">360p</option>
-                    <option value="2">720p</option>
-                    <option value="3">1080p</option>
-                    <option value="4">1440p</option>
-                    <option value="5">4K</option>
-                </select>
-            </label>
-            <label>Скорость:
-                <select id="speed">
-                    <option value="0.5">0.5x</option>
-                    <option value="1" selected>1x</option>
-                    <option value="1.5">1.5x</option>
-                    <option value="2">2x</option>
-                </select>
-            </label>
-        </div>
-
         <iframe id="player" src="" allowfullscreen allow="autoplay; encrypted-media"></iframe>
-        <p class="hint">
-            ⚙️ <b>Качество</b> меняется через параметры официального embed-плеера VK.<br>
-            ⏱️ <b>Скорость</b> воспроизведения невозможно изменить извне из-за политики безопасности браузера (Cross-Origin). 
-            Используйте встроенный ползунок скорости внутри самого плеера ВК.
-        </p>
+        
+        <div class="hint">
+            ⚠️ <b>Важно:</b> VK закрыл доступ к управлению качеством и скоростью извне.<br>
+            ✅ Чтобы сменить качество или скорость: наведите курсор на видео → нажмите ⚙️ (шестеренку) внутри плеера.
+        </div>
     </div>
 
     <script>
-        let oid = '', id = '';
-
         function loadVideo() {
             const raw = document.getElementById('url').value.trim();
-            // Поддерживает форматы: video-123456_789012, video123456_789012, ссылки с ?z=video...
-            const match = raw.match(/video(-?\d+)[_-](\d+)/);
-            if (!match) return alert('Ссылка не распознана. Вставьте в формате: https://vk.com/video-123456_789012');
             
-            oid = match[1];
-            id = match[2];
-            updatePlayer();
+            // Ищем ID владельца и ID видео в любом формате ссылки
+            // Поддерживает: vk.com/video-123_456, vk.com/clips?z=video-123_456, и т.д.
+            const match = raw.match(/video(-?\d+)_(\d+)/);
+            
+            if (!match) {
+                alert('Ссылка не распознана. Вставьте полную ссылку на видео из адресной строки.');
+                return;
+            }
+
+            const oid = match[1]; // ID владельца (например, -123456)
+            const vid = match[2]; // ID видео (например, 789012)
+
+            // Используем современный официальный URL для встраивания
+            // Это единственный стабильный способ на 2024-2026 год
+            const embedUrl = `https://vk.com/video_ext.php?oid=${oid}&id=${vid}&hd=2`; 
+            
+            // hd=2 пытается форсировать 720p при старте, но VK может игнорировать это
+            document.getElementById('player').src = embedUrl;
         }
-
-        function updatePlayer() {
-            const hd = document.getElementById('quality').value;
-            // VK официально поддерживает только параметр hd для качества
-            document.getElementById('player').src = `https://vk.com/video_ext.php?oid=${oid}&id=${id}&hd=${hd}`;
-        }
-
-        // Обновление при смене качества
-        document.getElementById('quality').addEventListener('change', updatePlayer);
-
-        // Информирование при попытке сменить скорость
-        document.getElementById('speed').addEventListener('change', () => {
-            alert('Внешнее управление скоростью заблокировано безопасностью браузера.\nИспользуйте элементы управления внутри плеера ВК (⚙️ → Скорость воспроизведения).');
-        });
     </script>
 </body>
 </html>
+
